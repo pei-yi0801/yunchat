@@ -54,5 +54,7 @@
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
-  }
+  },
+  "npm.enableRunFromFolder": true,
+  "npm.packageManager": "yarn"
 }
