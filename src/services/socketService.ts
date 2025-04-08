@@ -10,8 +10,13 @@ type IntervalId = ReturnType<typeof setInterval> | null;
 const WS_API_URL = 'wss://example.com/api/ws';
 const API_KEY_STORE = 'apiKey';
 const AUTH_TOKEN_STORE = 'authToken';
-const RECONNECT_DELAY = 3000; // 重连延迟（毫秒）
+const INITIAL_RECONNECT_DELAY = 3000; // 初始重连延迟（毫秒）
+const MAX_RECONNECT_DELAY = 30000; // 最大重连延迟（毫秒）
+const RECONNECT_FACTOR = 1.5; // 重连延迟增长因子
+const MAX_RECONNECT_ATTEMPTS = 10; // 最大重连尝试次数
 const PING_INTERVAL = 30000; // ping间隔（毫秒）
+const PONG_TIMEOUT = 5000; // pong超时时间（毫秒）
+const MAX_MISSED_HEARTBEATS = 3; // 最大允许丢失心跳次数
 
 // WebSocket 管理器单例类
 export class WebSocketManager {
@@ -22,6 +27,10 @@ export class WebSocketManager {
   private isConnecting = false;
   private reconnectTimeout: TimeoutId = null;
   private pingInterval: IntervalId = null;
+  private reconnectAttempts = 0;
+  private currentReconnectDelay = INITIAL_RECONNECT_DELAY;
+  private missedHeartbeats = 0;
+  private pongTimeout: TimeoutId = null;
 
   // 初始化WebSocket连接
   public async initialize(): Promise<void> {
@@ -167,38 +176,31 @@ export class WebSocketManager {
     console.log('WebSocket连接已建立');
     this._isConnected = true;
     this.isConnecting = false;
-
-    // 通知连接状态变化
+    this.reconnectAttempts = 0;
+    this.currentReconnectDelay = INITIAL_RECONNECT_DELAY;
+    this.missedHeartbeats = 0;
     this.notifyConnectionStateChange();
-
-    // 开始ping间隔
     this.startPingInterval();
   }
 
   // 处理接收到的消息
   private handleMessage(event: MessageEvent): void {
     try {
-      const message = JSON.parse(event.data) as WSMessage;
+      const message = JSON.parse(event.data);
 
-      // 处理ping消息
-      if (message.type === 'ping') {
-        this.sendMessage({
-          type: 'pong',
-          timestamp: Date.now()
-        });
+      // 处理pong消息
+      if (message.type === 'pong') {
+        this.missedHeartbeats = 0;
+        if (this.pongTimeout) {
+          clearTimeout(this.pongTimeout);
+          this.pongTimeout = null;
+        }
         return;
       }
 
-      // 将消息分发给所有处理程序
-      this.messageHandlers.forEach(handler => {
-        try {
-          handler(message);
-        } catch (error) {
-          console.error('消息处理程序发生错误:', error);
-        }
-      });
+      this.messageHandlers.forEach(handler => handler(message));
     } catch (error) {
-      console.error('处理WebSocket消息时出错:', error);
+      console.error('处理WebSocket消息失败:', error);
     }
   }
 
@@ -246,29 +248,43 @@ export class WebSocketManager {
       clearTimeout(this.reconnectTimeout);
     }
 
-    console.log(`计划在 ${RECONNECT_DELAY}ms 后重新连接...`);
+    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.error('达到最大重连次数，停止重连');
+      return;
+    }
+
     this.reconnectTimeout = setTimeout(() => {
-      console.log('尝试重新连接...');
-      this.reconnectTimeout = null;
       this.initialize();
-    }, RECONNECT_DELAY);
+      this.reconnectAttempts++;
+      this.currentReconnectDelay = Math.min(
+        this.currentReconnectDelay * RECONNECT_FACTOR,
+        MAX_RECONNECT_DELAY
+      );
+    }, this.currentReconnectDelay);
   }
 
   // 开始ping间隔以保持连接活动
   private startPingInterval(): void {
-    this.stopPingInterval();
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+    }
 
     this.pingInterval = setInterval(() => {
       if (this._isConnected) {
-        try {
-          this.sendMessage({
-            type: 'ping',
-            timestamp: Date.now()
-          });
-        } catch (error) {
-          console.error('发送ping失败:', error);
-          this.close();
+        this.sendMessage({ type: 'ping', timestamp: Date.now() });
+        this.missedHeartbeats++;
+
+        if (this.pongTimeout) {
+          clearTimeout(this.pongTimeout);
         }
+
+        this.pongTimeout = setTimeout(() => {
+          if (this.missedHeartbeats >= MAX_MISSED_HEARTBEATS) {
+            console.error('心跳检测失败，重新连接');
+            this.close();
+            this.initialize();
+          }
+        }, PONG_TIMEOUT);
       }
     }, PING_INTERVAL);
   }
@@ -283,4 +299,4 @@ export class WebSocketManager {
 }
 
 // 创建单例并导出
-export const webSocketManager = new WebSocketManager(); 
+export const webSocketManager = new WebSocketManager();

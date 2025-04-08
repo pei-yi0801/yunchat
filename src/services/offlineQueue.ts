@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Message } from '../types';
+import { WebSocketConfig } from '../config/websocket.config';
+
+const { OFFLINE_QUEUE: { MAX_QUEUE_SIZE, STORAGE_KEY, AUTO_SYNC_INTERVAL, SYNC_RETRY_DELAY } } = WebSocketConfig;
 
 // 存储键
-const OFFLINE_QUEUE_KEY = '@CustomerServiceApp:offlineQueue';
-const LAST_SYNC_TIME_KEY = '@CustomerServiceApp:lastSyncTime';
+const OFFLINE_QUEUE_KEY = STORAGE_KEY;
+const LAST_SYNC_TIME_KEY = WebSocketConfig.STORAGE_KEYS.LAST_SYNC_TIME;
 
 export interface QueuedMessage extends Message {
     queuedAt: number;
@@ -17,20 +20,19 @@ export interface QueuedMessage extends Message {
  */
 export class OfflineQueueManager {
     private queue: QueuedMessage[] = [];
-    private maxQueueSize: number = 1000;
+    private maxQueueSize: number = MAX_QUEUE_SIZE;
     private isLoaded: boolean = false;
     private isSyncing: boolean = false;
     private syncListeners: Array<(success: boolean, error?: Error) => void> = [];
     private queueChangedListeners: Array<(queueSize: number) => void> = [];
     private syncInProgress: boolean = false;
     private autoSyncInterval: ReturnType<typeof setInterval> | null = null;
-    private syncRetryDelay: number = 5000;
+    private syncRetryDelay: number = SYNC_RETRY_DELAY;
+    private lastSyncAttempt: number = 0;
 
-    constructor(maxQueueSize?: number) {
-        if (maxQueueSize) {
-            this.maxQueueSize = maxQueueSize;
-        }
+    constructor() {
         this.loadQueue();
+        // 初始化时不启动自动同步，需要外部调用startAutoSync并提供同步函数
     }
 
     /**
@@ -73,7 +75,11 @@ export class OfflineQueueManager {
             if (b.priority !== a.priority) {
                 return b.priority - a.priority;
             }
-            // 同等优先级按队列时间排序（升序）
+            // 同等优先级按重试次数排序（升序）
+            if (a.attempts !== b.attempts) {
+                return a.attempts - b.attempts;
+            }
+            // 最后按队列时间排序（升序）
             return a.queuedAt - b.queuedAt;
         });
     }
@@ -85,6 +91,11 @@ export class OfflineQueueManager {
      * @returns 成功添加返回true，失败返回false
      */
     public async addMessage(message: Message, priority: number = 5): Promise<boolean> {
+        // 验证优先级范围
+        if (priority < 1 || priority > 10) {
+            throw new Error('消息优先级必须在1-10之间');
+        }
+
         if (!this.isLoaded) {
             await this.waitForLoad();
         }
@@ -348,4 +359,4 @@ export class OfflineQueueManager {
             checkLoaded();
         });
     }
-} 
+}
