@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 // @ts-ignore
 import { formatDistanceToNow } from 'date-fns';
 import { MessageStatus, Message } from '../../types';
-import { AudioWaveform, File, Image as ImageIcon, Check, CheckCheck } from 'lucide-react-native';
+import { AudioWaveform, File, Check, CheckCheck } from 'lucide-react-native';
 
 interface ChatMessageProps {
   message: Message;
@@ -40,7 +40,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     switch (message.contentType) {
       case 'text':
         return <Text style={styles.messageText}>{message.content}</Text>;
-        
+
       case 'image':
         return (
           <View style={styles.imageContainer}>
@@ -51,7 +51,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             />
           </View>
         );
-        
+
       case 'file':
         return (
           <View style={styles.fileContainer}>
@@ -61,7 +61,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </Text>
           </View>
         );
-        
+
       case 'audio':
         return (
           <View style={styles.voiceContainer}>
@@ -71,14 +71,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </Text>
           </View>
         );
-        
+
       case 'system':
         return (
           <View style={styles.systemContainer}>
             <Text style={styles.systemText}>{message.content}</Text>
           </View>
         );
-        
+
       default:
         return <Text style={styles.messageText}>{message.content}</Text>;
     }
@@ -109,7 +109,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       >
         {renderMessageContent()}
       </Pressable>
-      
+
       <View style={styles.timeContainer}>
         <Text style={styles.timeText}>
           {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
@@ -226,4 +226,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatMessage; 
+export default ChatMessage;

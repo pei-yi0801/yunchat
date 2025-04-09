@@ -42,7 +42,7 @@ const syncObservers: SyncObserver[] = [];
 /**
  * 初始化同步服务
  */
-export const initSyncService = (): void => {
+export const initSyncService = async (): Promise<void> => {
   try {
     // 监听网络状态变化
     registerNetworkStatusCallback(handleNetworkStatusChange);
@@ -285,7 +285,7 @@ const fetchLatestData = async (): Promise<void> => {
 export const sendMessage = async (
   sessionId: string,
   content: string,
-  contentType: string = 'text',
+  contentType: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system' = 'text',
   attachments: any[] = []
 ): Promise<Message> => {
   try {
@@ -475,4 +475,4 @@ export const resendMessage = async (
     console.error('重发消息时出错:', error);
     return false;
   }
-}; 
+};

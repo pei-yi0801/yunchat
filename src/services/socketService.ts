@@ -63,37 +63,40 @@ export class WebSocketManager {
   }
 
   // 关闭WebSocket连接
-  public close(): void {
-    this.stopPingInterval();
+  public close(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      this.stopPingInterval();
 
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
-
-    if (this.ws) {
-      // 移除所有事件处理程序
-      this.ws.onopen = null;
-      this.ws.onmessage = null;
-      this.ws.onclose = null;
-      this.ws.onerror = null;
-
-      // 如果连接开着，关闭它
-      if (this.ws.readyState === WebSocket.OPEN) {
-        this.ws.close();
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
       }
 
-      this.ws = null;
-    }
+      if (this.ws) {
+        // 移除所有事件处理程序
+        this.ws.onopen = null;
+        this.ws.onmessage = null;
+        this.ws.onclose = null;
+        this.ws.onerror = null;
 
-    // 更新连接状态
-    if (this._isConnected) {
-      this._isConnected = false;
-      this.notifyConnectionStateChange();
-    }
+        // 如果连接开着，关闭它
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.close();
+        }
 
-    this.isConnecting = false;
-    console.log('WebSocket连接已关闭');
+        this.ws = null;
+      }
+
+      // 更新连接状态
+      if (this._isConnected) {
+        this._isConnected = false;
+        this.notifyConnectionStateChange();
+      }
+
+      this.isConnecting = false;
+      console.log('WebSocket连接已关闭');
+      resolve();
+    });
   }
 
   // 发送WebSocket消息

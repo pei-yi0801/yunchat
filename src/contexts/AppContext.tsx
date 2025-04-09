@@ -471,7 +471,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sessionId,
       senderType: 'agent',
       content,
-      contentType,
+      contentType: contentType as 'text' | 'image' | 'file' | 'audio' | 'video' | 'system',
       timestamp: new Date().toISOString(),
       status: 'sending' as MessageStatus,
     };
@@ -696,4 +696,4 @@ export function useApp() {
   }
 
   return context;
-} 
+}

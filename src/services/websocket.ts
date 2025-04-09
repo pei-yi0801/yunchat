@@ -489,7 +489,6 @@ export class WebSocketService {
             this.fallbackToOfflineMode();
             return;
         }
-
         if (this.reconnectAttempts < this.connectionConfig.maxReconnectAttempts ||
             this.connectionConfig.maxReconnectAttempts === 0) {
 
@@ -754,7 +753,7 @@ export class WebSocketService {
             id: messageId,
             sessionId,
             content,
-            contentType,
+            contentType: 'text' as const,
             senderType: 'agent',
             timestamp: new Date().toISOString(),
             status: 'sending',
@@ -963,4 +962,4 @@ export function useWebSocket() {
         latency: wsService.getCurrentLatency(),
         packetLoss: wsService.getPacketLoss(),
     };
-} 
+}

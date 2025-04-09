@@ -3,8 +3,8 @@ import * as SecureStore from 'expo-secure-store';
 import { AuthUser, UserRole, Permission, JWTPayload, hasPermission } from '../types/auth';
 
 // 存储键
-const AUTH_TOKEN_KEY = '@CustomerServiceApp:authToken';
-const AUTH_USER_KEY = '@CustomerServiceApp:authUser';
+const AUTH_TOKEN_KEY = 'CustomerServiceApp.authToken';
+const AUTH_USER_KEY = 'CustomerServiceApp.authUser';
 
 // 认证上下文类型
 interface AuthContextType {
@@ -305,4 +305,4 @@ export const useAuth = (): AuthContextType => {
     }
 
     return context;
-}; 
+};

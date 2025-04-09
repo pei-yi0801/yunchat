@@ -6,6 +6,12 @@
 
 ## 功能特点
 
+### 🔄 连接管理
+- 网络状态实时监测（4G/5G/WiFi）
+- 离线消息队列自动存储与同步
+- 断线自动重连（最多5次尝试）
+- 连接稳定性指标统计
+
 ### 💬 聊天管理
 - 实时聊天界面，带有消息状态指示器
 - 支持文本消息、图片、文件和语音消息
@@ -36,10 +42,18 @@
 ## 技术栈
 
 - **框架**: Expo SDK 52.0.33
+- **类型安全**: TypeScript 5.3.3
+- **代码规范**: ESLint 9.0.0 + Prettier 3.3.2
 - **导航**: Expo Router 4.0.17 + React Navigation Drawer
 - **UI组件**: React Native 核心组件
 - **实时通信**: Socket.io-client 4.8.1
-- **状态管理**: React Context API
+  - 自动重连机制（指数退避算法）
+  - 心跳检测（30秒间隔）
+  - 连接状态监控界面
+- **状态管理**: React Context API + ServiceContext
+  - 统一服务实例管理
+  - 依赖注入模式
+  - 服务生命周期控制
 - **认证**: JWT + Secure Storage
 - **适配层**: 自定义API兼容适配器
 - **图标**: Lucide React Native
@@ -69,7 +83,9 @@
 │   ├── services/          # 核心服务
 │   │   ├── auth.ts        # 认证服务
 │   │   ├── socket.ts      # WebSocket服务
-│   │   └── config.ts      # 配置服务
+│   │   ├── config.ts      # 配置服务
+│   │   ├── syncService.ts  # 数据同步服务
+│   │   └── socketService.ts # Socket连接管理
 │   └── types/             # 类型定义
 │       ├── index.ts       # 核心类型
 │       └── env.d.ts       # 环境变量类型

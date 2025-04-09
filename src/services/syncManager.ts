@@ -4,16 +4,13 @@ import { OfflineQueueManager } from './offlineQueue';
 import {
     ConnectionStatus,
     Message,
-    ChatSession,
     MessageStatus,
-    SyncStatus,
-    generateId
+    SyncStatus
 } from '../types';
 import {
     getMessages,
     getSessions,
-    updateMessage,
-    updateSession
+    updateMessage
 } from './storageService';
 
 // 同步错误接口

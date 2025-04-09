@@ -3,7 +3,6 @@ import * as SecureStore from '../adapters/SecureStoreBridge';
 // @ts-ignore
 import { jwtDecode } from 'jwt-decode';
 import { AuthData } from '../types';
-import { generateId, PREFIXES } from '../types';
 import { API_CONFIG } from './config';
 
 // 存储密钥
@@ -121,4 +120,4 @@ export const logout = async (): Promise<void> => {
 export const isAuthenticated = async (): Promise<boolean> => {
   const user = await getCurrentUser();
   return user !== null;
-}; 
+};

@@ -133,7 +133,7 @@ export default function AgentProfileScreen() {
           source={
             agent?.avatar
               ? { uri: agent.avatar }
-              : require('@/assets/images/default-avatar.png')
+              : require('../../../assets/images/default-avatar.png')
           }
           style={styles.avatar}
         />
@@ -544,4 +544,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     color: '#8E8E93',
   },
-}); 
+});

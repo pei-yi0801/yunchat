@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useWebSocket, WSStatusListener } from '../services/websocket';
 import { ConnectionStatus as ConnectionStatusEnum } from '../types';
@@ -323,4 +323,4 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_600SemiBold',
         fontSize: 16,
     },
-}); 
+});

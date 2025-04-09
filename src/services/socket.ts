@@ -196,8 +196,9 @@ export function removeEventListener(event: string, callback: (data: any) => void
 
 /**
  * 断开WebSocket连接
+ * @returns Promise<void> 断开连接的Promise
  */
-export function disconnectSocket(): void {
+export async function disconnectSocket(): Promise<void> {
   if (socket) {
     console.log('主动断开WebSocket连接');
     socket.disconnect();
@@ -326,4 +327,4 @@ export function getConnectionInfo(): {
     disconnectReason: socket.disconnected ? '已断开连接' : undefined,
     connectionAttempts: 0 // 目前没有办法直接从socket.io获取重连次数
   };
-} 
+}

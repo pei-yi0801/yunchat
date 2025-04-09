@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { Permission, hasPermission, UserRole } from '../../types/auth';
+import { Permission, UserRole } from '../../types/auth';
 import { COLORS } from '../../constants';
 
 // 导航项配置接口
@@ -167,4 +167,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PermissionBasedNavigation; 
+export default PermissionBasedNavigation;

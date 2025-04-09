@@ -3,8 +3,8 @@
 * 显示消息同步进度和状态
 */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { COLORS } from '../constants';
 import { registerSyncObserver, syncOfflineQueue, getSyncManager, SyncError } from '../services/syncManager';
 import { ArrowUpDown, Check, AlertCircle, RefreshCw, AlertTriangle, Info } from 'lucide-react-native';
@@ -188,7 +188,7 @@ export default function SyncStatus() {
 
             {expanded && hasErrors && (
                 <View style={styles.errorsContainer}>
-                    <Text style={styles.errorsTitle}>同步错误详情:</Text>
+                    <Text style={styles.errorsTitle}>同步错误详情: ({errorCount}个错误)</Text>
                     <ScrollView style={styles.errorsScroll}>
                         {syncErrors.map((error, index) => (
                             <View key={index} style={styles.errorItem}>
@@ -222,7 +222,14 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
         elevation: 3,
-        shadowColor: '#000',
+        ...(Platform.OS === 'web' ? {
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        } : {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4
+        }),
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 3,

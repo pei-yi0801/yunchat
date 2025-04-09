@@ -3,7 +3,7 @@
  * 显示系统通知、连接状态和消息提醒
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useWebSocket, WSStatusListener } from '../services/websocket';
 import { ConnectionStatus, ConnectionQuality } from '../types';
@@ -253,4 +253,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     }
-}); 
+});

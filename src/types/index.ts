@@ -1,9 +1,6 @@
 /// <reference types="react-native-get-random-values" />
 
-// @ts-ignore
 import { nanoid } from 'nanoid';
-
-// 导入配置服务（放在文件顶部）
 import { AUTH_CONFIG } from '../services/config';
 
 // 前缀常量
@@ -124,7 +121,7 @@ export interface Message {
   id: string;
   sessionId: string;
   content: string;
-  contentType: string; // 'text' | 'image' | 'file' | 'audio' | 'video'
+  contentType: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system';
   senderType: 'agent' | 'customer' | 'system';
   timestamp: string;
   status: MessageStatus;
@@ -234,4 +231,4 @@ export const validateKey = (key: string): boolean => {
     return true;
   }
   return PRESET_KEYS.includes(key) || key === getCurrentKey();
-}; 
+};

@@ -4,7 +4,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Keyboard,
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator,
@@ -367,4 +366,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MessageInput; 
+export default MessageInput;

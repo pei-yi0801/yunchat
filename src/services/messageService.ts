@@ -151,7 +151,7 @@ export class MessageService {
      * @param sessionId 会话ID
      * @param contentType 消息类型
      */
-    public async sendMessage(content: string, sessionId: string, contentType: string = 'text'): Promise<Message> {
+    public async sendMessage(content: string, sessionId: string, contentType: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system' = 'text'): Promise<Message> {
         // 创建消息对象
         const messageId = `msg_${nanoid(10)}`;
         const now = new Date();
@@ -350,7 +350,7 @@ export function useMessageService() {
     const webSocket = useWebSocket();
 
     return {
-        sendMessage: (content: string, sessionId: string, contentType: string = 'text') =>
+        sendMessage: (content: string, sessionId: string, contentType: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system' = 'text') =>
             messageService.sendMessage(content, sessionId, contentType),
         loadMessages: (sessionId: string) =>
             messageService.loadSessionMessages(sessionId),
@@ -365,4 +365,4 @@ export function useMessageService() {
         syncOfflineMessages: () =>
             messageService.syncOfflineMessages(),
     };
-} 
+}
