@@ -56,7 +56,7 @@ export enum MessageType {
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed' | 'pending';
 
 // 消息同步状态
-export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'failed';
+export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'failed' | 'error';
 
 // 网络连接状态
 export enum ConnectionStatus {
@@ -130,6 +130,9 @@ export interface Message {
   isOffline?: boolean;
   syncStatus?: SyncStatus;
   offlineId?: string;
+  priority?: number; // 消息优先级，用于队列排序
+  lastSyncTime?: number; // 最后同步时间
+  error?: string; // 错误信息
 }
 
 // 聊天会话
@@ -188,6 +191,40 @@ export interface SystemConfig {
     push: boolean;
     sound: boolean;
   };
+}
+
+// SyncManager状态接口
+export interface SyncManagerState {
+  isInitialSyncComplete: boolean;
+  isSyncing: boolean;
+  lastSyncTime: number | null;
+  errors: SyncError[];
+  queueSize: number;
+  networkStatus: ConnectionStatus;
+  networkQuality: ConnectionQuality;
+}
+
+// 同步错误接口
+export interface SyncError {
+  id: string;
+  messageId?: string;
+  error: any;
+  timestamp: number;
+  details?: string;
+  attempts?: number;
+}
+
+// SyncManager类型
+export interface SyncManager {
+  getState(): SyncManagerState;
+  syncOfflineQueue(): Promise<boolean>;
+  resendMessage(sessionId: string, messageId: string): Promise<boolean>;
+  registerObserver(observer: (state: SyncManagerState) => void): () => void;
+  handleQueueSizeChange?: (size: number) => void;
+  handleNetworkStatusChange?: (status: ConnectionStatus, quality: ConnectionQuality) => void;
+  handleWebSocketConnection?: (isConnected: boolean) => void;
+  handleWebSocketMessage?: (message: any) => void;
+  initLastSyncTime?: () => Promise<void>;
 }
 
 // 会话分析数据

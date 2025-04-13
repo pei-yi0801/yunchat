@@ -21,7 +21,10 @@ import {
 } from 'lucide-react-native';
 import { UPLOAD_CONFIG } from '../../services/config';
 import { generateId, PREFIXES, MessageType } from '../../types';
-import { sendTypingStatus } from '../../services/socket';
+import { WebSocketService } from '../../services/websocket';
+
+// 获取WebSocket服务实例
+const wsService = WebSocketService.getInstance();
 
 // 创建一个辅助函数来处理触觉反馈
 const triggerHaptic = (style?: any) => {
@@ -80,7 +83,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     if (!isTyping) {
       setIsTyping(true);
-      sendTypingStatus(true, sessionId);
+      wsService.sendTypingStatus(true, sessionId);
     }
 
     // 重置超时
@@ -91,7 +94,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     // 设置新的超时（2秒后发送停止输入）
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-      sendTypingStatus(false, sessionId);
+      wsService.sendTypingStatus(false, sessionId);
     }, 2000);
   };
 

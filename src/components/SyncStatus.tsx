@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView
 import { COLORS } from '../constants';
 import { registerSyncObserver, syncOfflineQueue, getSyncManager, SyncError } from '../services/syncManager';
 import { ArrowUpDown, Check, AlertCircle, RefreshCw, AlertTriangle, Info } from 'lucide-react-native';
+import { SyncManager } from '../types';
 
 export default function SyncStatus() {
     const [isSyncing, setIsSyncing] = useState(false);

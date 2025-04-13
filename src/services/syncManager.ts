@@ -1,4 +1,4 @@
-import { webSocketManager } from './socketService';
+import { WebSocketService, WSStatusListener, WSMessageListener } from './websocket';
 import { isOnline, registerNetworkStatusCallback, ConnectionQuality } from './networkService';
 import { OfflineQueueManager } from './offlineQueue';
 import {
@@ -17,7 +17,7 @@ import {
 export interface SyncError {
     id: string;
     messageId?: string;
-    error: any;
+    error: Error | unknown;
     timestamp: number;
     details?: string;
     attempts?: number;
@@ -68,11 +68,23 @@ export class SyncManager {
         // 监听网络状态变化
         registerNetworkStatusCallback(this.handleNetworkStatusChange);
 
-        // 监听WebSocket连接状态
-        if (webSocketManager && typeof webSocketManager.registerConnectionStateHandler === 'function') {
-            webSocketManager.registerConnectionStateHandler(this.handleWebSocketConnection);
+        // 监听WebSocket连接状态和消息
+        const wsService = WebSocketService.getInstance();
+        // 使用类型断言确保TypeScript识别addStatusListener方法
+        (wsService as any).addStatusListener({
+            onStatusChange: (status: ConnectionStatus) => {
+                this.handleWebSocketConnection(status === ConnectionStatus.CONNECTED);
+            }
+        });
+
+        // 注册WebSocket消息处理
+        if (wsService) {
+            // 使用类型断言确保TypeScript识别addMessageListener方法
+            (wsService as any).addMessageListener({
+                onMessage: this.handleWebSocketMessage
+            });
         } else {
-            console.warn('无法注册WebSocket连接状态处理程序');
+            console.warn('无法注册WebSocket消息处理程序: WebSocket服务未定义');
         }
 
         // 获取上次同步时间
@@ -86,7 +98,7 @@ export class SyncManager {
         try {
             const lastSyncTime = await this.queueManager.getLastSyncTime();
             this.updateState({ lastSyncTime });
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('获取上次同步时间出错:', error);
         }
     }
@@ -119,6 +131,95 @@ export class SyncManager {
         if (isConnected) {
             // WebSocket连接恢复时，尝试同步离线数据
             this.syncOfflineQueue();
+        }
+    };
+
+    /**
+     * 处理WebSocket消息
+     */
+    private handleWebSocketMessage = async (message: any): Promise<void> => {
+        if (!message || typeof message !== 'object') {
+            console.warn('收到无效的WebSocket消息格式');
+            return;
+        }
+
+        try {
+            switch (message.type) {
+                case 'message':
+                    const data = message.payload;
+                    switch (data?.type) {
+                        case 'new_message':
+                            if (data.sessionId && data.message) {
+                                await updateMessage(data.sessionId, data.message.id, {
+                                    ...data.message,
+                                    syncStatus: 'synced',
+                                    isOffline: false
+                                });
+                            }
+                            break;
+
+                        case 'message_status_update':
+                            if (data.sessionId && data.messageId) {
+                                await updateMessage(data.sessionId, data.messageId, {
+                                    status: data.status,
+                                    syncStatus: 'synced'
+                                });
+                            }
+                            break;
+
+                        case 'sync_complete':
+                            this.updateState({
+                                isInitialSyncComplete: true,
+                                lastSyncTime: Date.now()
+                            });
+                            break;
+
+                        case 'error':
+                            const syncError: SyncError = {
+                                id: `err_${Date.now()}`,
+                                messageId: data.messageId,
+                                error: data.error,
+                                timestamp: Date.now(),
+                                details: data.details || '同步错误'
+                            };
+                            this.updateState({
+                                errors: [...this.state.errors, syncError]
+                            });
+                            break;
+                    }
+                    break;
+
+                case 'connection_quality':
+                    this.updateState({
+                        networkQuality: message.payload.quality
+                    });
+                    break;
+
+                case 'sync_status':
+                    if (message.payload.status === 'error') {
+                        const syncError: SyncError = {
+                            id: `err_${Date.now()}`,
+                            error: message.payload.error,
+                            timestamp: Date.now(),
+                            details: message.payload.details || '同步状态错误'
+                        };
+                        this.updateState({
+                            errors: [...this.state.errors, syncError]
+                        });
+                    }
+                    break;
+            }
+        } catch (error: Error | unknown) {
+            console.error('处理WebSocket消息失败:', error);
+            const syncError: SyncError = {
+                id: `err_${Date.now()}`,
+                error,
+                timestamp: Date.now(),
+                details: `消息处理错误: ${error instanceof Error ? error.message : '未知错误'}`
+            };
+            this.updateState({
+                errors: [...this.state.errors, syncError]
+            });
         }
     };
 
@@ -157,7 +258,7 @@ export class SyncManager {
         this.observers.forEach(observer => {
             try {
                 observer({ ...this.state });
-            } catch (error) {
+            } catch (error: Error | unknown) {
                 console.error('通知同步观察者失败:', error);
             }
         });
@@ -168,10 +269,11 @@ export class SyncManager {
      */
     public async syncOfflineQueue(): Promise<boolean> {
         // 如果已经在同步、网络断开或WebSocket未连接，直接返回
+        const wsService = WebSocketService.getInstance();
         if (
             this.state.isSyncing ||
             this.state.networkStatus !== ConnectionStatus.CONNECTED ||
-            !this.isWSConnected
+            !wsService.isConnected()
         ) {
             return false;
         }
@@ -192,13 +294,13 @@ export class SyncManager {
             });
 
             return result.success;
-        } catch (error) {
+        } catch (error: unknown) {
             // 添加同步错误
             const syncError: SyncError = {
                 id: `err_${Date.now()}`,
                 error,
                 timestamp: Date.now(),
-                details: '同步队列失败'
+                details: `同步队列失败: ${error instanceof Error ? error.message : '未知错误'}`
             };
 
             this.updateState({
@@ -215,47 +317,71 @@ export class SyncManager {
      */
     private syncMessageToServer = async (message: Message): Promise<boolean> => {
         try {
-            if (!webSocketManager || !webSocketManager.isConnected()) {
-                return false;
+            const wsService = WebSocketService.getInstance();
+            if (!wsService || !wsService.isConnected()) {
+                throw new Error('WebSocket未连接');
             }
 
-            // 发送消息
-            webSocketManager.sendMessage({
+            // 准备消息数据
+            const wsMessage = {
                 type: 'message',
                 payload: {
                     ...message,
                     isOffline: false,
-                    syncStatus: 'synced',
+                    syncStatus: 'syncing',
+                    timestamp: Date.now()
                 },
-                timestamp: Date.now(),
                 metadata: {
                     sender: 'agent',
-                    messageType: 'new_message'
+                    messageType: 'new_message',
+                    attempts: (message as any).attempts || 1,
+                    priority: (message as any).priority || 5
                 }
+            };
+
+            // 更新本地消息状态为同步中
+            await updateMessage(message.sessionId, message.id, {
+                syncStatus: 'syncing',
+                status: 'sending'
             });
 
-            // 更新本地消息状态
+            // 发送消息
+            // 使用类型断言确保TypeScript识别sendMessage方法
+            const success = (wsService as any).sendMessage('message', wsMessage);
+            if (!success) {
+                throw new Error('发送消息失败');
+            }
+
+            // 更新本地消息状态为已同步
             await updateMessage(message.sessionId, message.id, {
                 isOffline: false,
                 syncStatus: 'synced',
-                status: 'sent' as MessageStatus
-            });
+                status: 'sent',
+                lastSyncTime: Date.now() // 已在Message接口中添加此属性
+            } as Partial<Message>);
 
             return true;
-        } catch (error) {
+        } catch (error: unknown) {
             // 创建消息同步错误
             const syncError: SyncError = {
                 id: `err_${Date.now()}`,
                 messageId: message.id,
                 error,
                 timestamp: Date.now(),
-                details: `同步消息 ${message.id} 失败`,
-                attempts: (message as any).attempts || 1
+                details: `同步消息 ${message.id} 失败: ${error instanceof Error ? error.message : '未知错误'}`,
+                attempts: ((message as any).attempts || 0) + 1
             };
 
             this.updateState({
                 errors: [...this.state.errors, syncError]
             });
+
+            // 更新消息状态为失败
+            await updateMessage(message.sessionId, message.id, {
+                status: 'failed',
+                syncStatus: 'error',
+                error: error instanceof Error ? error.message : String(error)
+            } as Partial<Message>).catch(console.error);
 
             return false;
         }
@@ -268,7 +394,7 @@ export class SyncManager {
         try {
             const result = await this.queueManager.addMessage(message, priority);
             return result;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('添加消息到队列失败:', error);
             return false;
         }
@@ -307,14 +433,14 @@ export class SyncManager {
                 // 离线状态，添加到队列等待自动同步
                 return this.addToQueue(message, 8); // 使用较高优先级
             }
-        } catch (error) {
+        } catch (error: Error | unknown) {
             // 添加重发错误
             const syncError: SyncError = {
                 id: `err_${Date.now()}`,
                 messageId,
                 error,
                 timestamp: Date.now(),
-                details: `重发消息 ${messageId} 失败`
+                details: `重发消息 ${messageId} 失败: ${error instanceof Error ? error.message : '未知错误'}`
             };
 
             this.updateState({
@@ -333,7 +459,7 @@ export class SyncManager {
 
         this.autoSyncInterval = setInterval(() => {
             if (this.state.queueSize > 0) {
-                this.syncOfflineQueue().catch(error => {
+                this.syncOfflineQueue().catch((error: Error | unknown) => {
                     console.error('自动同步失败:', error);
                 });
             }
@@ -403,7 +529,7 @@ export class SyncManager {
                             break;
                         }
                     }
-                } catch (retryError) {
+                } catch (retryError: Error | unknown) {
                     console.error(`重试消息 ${error.messageId} 失败:`, retryError);
                 }
             }

@@ -2,7 +2,7 @@
 import NetInfo, { NetInfoState, NetInfoSubscription } from '@react-native-community/netinfo';
 import { ConnectionStatus } from '@/src/types';
 import { getSessions, getOfflineQueue, addToOfflineQueue, removeFromOfflineQueue } from './storageService';
-import { webSocketManager } from './socketService';
+import { WebSocketService } from './websocket';
 
 // 网络状态监听器
 let netInfoSubscription: NetInfoSubscription | null = null;
@@ -210,7 +210,7 @@ export const syncOfflineData = async (): Promise<void> => {
     }
 
     // 检查WebSocket连接
-    if (!webSocketManager.isConnected()) {
+    if (!WebSocketService.getInstance().isConnected()) {
       console.log('无法同步离线数据：WebSocket未连接');
       return;
     }
@@ -233,7 +233,12 @@ export const syncOfflineData = async (): Promise<void> => {
     for (const offlineMessage of sortedQueue) {
       try {
         // 使用WebSocket发送消息
-        webSocketManager.sendMessage({
+        const wsService = WebSocketService.getInstance();
+        if (!wsService.isConnected()) {
+          throw new Error('WebSocket未连接');
+        }
+
+        wsService.sendMessage('message', {
           type: 'message',
           payload: {
             ...offlineMessage,
@@ -282,4 +287,4 @@ export const queueOfflineMessage = async (message: any): Promise<void> => {
 };
 
 // 自动初始化网络监控
-startNetworkMonitoring(); 
+startNetworkMonitoring();

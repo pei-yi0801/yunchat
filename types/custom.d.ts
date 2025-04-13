@@ -308,4 +308,67 @@ declare module '*.jpg' {
 declare module '*.json' {
     const value: any;
     export default value;
-} 
+}
+
+// WebSocket相关类型声明
+declare module 'socket.io-client' {
+    export function io(url: string, opts?: any): Socket;
+    export interface Socket {
+        on(event: string, callback: (data: any) => void): this;
+        emit(event: string, data: any): boolean;
+        connect(): void;
+        disconnect(): void;
+        connected: boolean;
+    }
+}
+
+// 为WebSocketService添加类型声明
+declare module '../services/websocket' {
+    import { ConnectionStatus, ConnectionQuality, WSMessage } from '../src/types';
+
+    export interface WSStatusListener {
+        onStatusChange: (status: ConnectionStatus) => void;
+        onConnectionQualityChange?: (quality: ConnectionQuality) => void;
+        onOfflineMode?: () => void;
+    }
+
+    export interface WSMessageListener {
+        onMessage: (message: WSMessage) => void;
+        onMessageError?: (message: WSMessage) => void;
+    }
+
+    export class WebSocketService {
+        static getInstance(): WebSocketService;
+        isConnected(): boolean;
+        connect(): Promise<boolean>;
+        disconnect(): void;
+        getStatus(): ConnectionStatus;
+        getConnectionQuality(): ConnectionQuality;
+        getCurrentLatency(): number;
+        getPacketLoss(): number;
+        addStatusListener(listener: WSStatusListener): void;
+        removeStatusListener(listener: WSStatusListener): void;
+        addMessageListener(listener: WSMessageListener): void;
+        removeMessageListener(listener: WSMessageListener): void;
+        addEventListener(event: string, callback: (data: any) => void): void;
+        removeEventListener(event: string, callback: (data: any) => void): void;
+        sendMessage(event?: string, data?: any): boolean;
+        sendMessage(message: WSMessage): boolean;
+        sendChatMessage(content: string, sessionId: string, contentType?: string): string;
+        sendTypingStatus(isTyping: boolean, sessionId: string): void;
+    }
+
+    export function useWebSocket(): {
+        status: ConnectionStatus;
+        connectionQuality: ConnectionQuality;
+        connect: () => Promise<boolean>;
+        disconnect: () => void;
+        sendMessage: (event: string, data: any) => boolean;
+        addMessageListener: (listener: WSMessageListener) => void;
+        removeMessageListener: (listener: WSMessageListener) => void;
+        addStatusListener: (listener: WSStatusListener) => void;
+        removeStatusListener: (listener: WSStatusListener) => void;
+    };
+
+    export { ConnectionQuality };
+}
