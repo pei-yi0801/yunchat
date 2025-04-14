@@ -18,6 +18,27 @@ export function ServiceInitializer({
         const initialize = async () => {
             try {
                 await initializeServices();
+                // 初始化默认管理员账户
+                try {
+                    const existingAdmin = await userService.getUserByUsername('admin');
+                    if (!existingAdmin) {
+                        await userService.createUser({
+                            username: 'admin',
+                            password: 'admin123',
+                            role: UserRole.ADMIN,
+                            permissions: [Permission.MANAGE_SYSTEM, Permission.MANAGE_AGENTS],
+                            forcePasswordChange: true
+                        });
+                        addNotification({
+                            title: '默认账户已创建',
+                            message: '管理员账户：admin / admin123',
+                            type: NotificationType.INFO,
+                            duration: 5000
+                        });
+                    }
+                } catch (error) {
+                    console.error('初始化管理员账户失败:', error);
+                }
                 addNotification({
                     title: '服务初始化',
                     message: '所有服务已成功初始化',

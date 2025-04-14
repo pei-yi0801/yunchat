@@ -34,6 +34,14 @@
 
 ### 2. "找不到模块或其相应的类型声明"错误
 
+新增适配器模式解决方案：
+```typescript
+// 使用适配层替代直接导入
+import * as SecureStore from '../adapters/SecureStoreBridge';
+// 替代原有导入方式
+// import * as SecureStore from 'expo-secure-store';
+```
+
 错误消息示例：
 ```
 找不到模块"expo-secure-store"或其相应的类型声明。
@@ -82,6 +90,19 @@
    ```
 
 ## 最佳实践
+
+**生产环境密钥管理补充**：
+1. 在`.env.production`中配置`KEY_ROTATION_INTERVAL=30`设置密钥轮换周期
+2. 添加PM2生态配置文件：
+```json
+{
+  "apps": [{
+    "name": "key-rotation",
+    "script": "./scripts/keyRotation.js",
+    "cron_restart": "0 0 * * *"
+  }]
+}
+```
 
 1. **创建完整的类型声明文件**：通过在`types/custom.d.ts`中添加完整的类型定义，避免在每个使用处添加`@ts-ignore`注释。
 
@@ -149,4 +170,4 @@ declare module 'react-native-view-shot' {
     }
   ): Promise<string>;
 }
-``` 
+```

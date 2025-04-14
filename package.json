@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx expo start --clear",
-    "start": "npx expo start",
+    "dev": "yarn expo start --clear",
+    "start": "yarn expo start",
     "build:web": "expo export --platform web",
     "lint": "expo lint",
     "android": "expo run:android",
@@ -59,6 +59,7 @@
     "react-native-gesture-handler": "~2.20.2",
     "react-native-get-random-values": "^1.11.0",
     "react-native-modal": "^14.0.0-rc.1",
+    "react-native-prompt-android": "^1.1.0",
     "react-native-qrcode-svg": "^6.3.15",
     "react-native-reanimated": "~3.16.1",
     "react-native-safe-area-context": "4.12.0",

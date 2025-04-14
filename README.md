@@ -300,11 +300,11 @@
      ```
 
 3. **包版本不匹配**：
-   - 运行`npx expo install`更新依赖到兼容版本
+   - 运行`yarn expo install`更新依赖到兼容版本
 
 4. **SecureStore版本兼容性问题**：
    - 项目使用适配层(SecureStoreBridge)解决不同版本expo-secure-store API差异
-   - 遇到API兼容性问题时，可选择降级包：`npx expo install expo-secure-store@12.8.1`
+   - 遇到API兼容性问题时，可选择降级包：`yarn expo install expo-secure-store@12.8.1`
    - 或使用适配层：`import * as SecureStore from '../adapters/SecureStoreBridge'`
    - 注意：`ALWAYS`和`ALWAYS_THIS_DEVICE_ONLY`常量已被替换为安全的替代项：
      - 我们在适配层中将这些常量映射到`AFTER_FIRST_UNLOCK`和`AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`
@@ -417,7 +417,7 @@ React Native已弃用直接在组件上使用`pointerEvents`属性，应该改�
 
 ```bash
 npm install
-npx expo start
+yarn expo start
 ```
 
 ## 管理控制台
@@ -477,12 +477,12 @@ import { AgentConsole } from '@/src/components/agent';
 npm install
 
 # 启动开发服务器
-npx expo start
+yarn expo start
 
 # 特定平台启动
-npx expo start --web
-npx expo start --ios
-npx expo start --android
+yarn expo start --web
+yarn expo start --ios
+yarn expo start --android
 ```
 
 ## 环境配置

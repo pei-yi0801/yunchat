@@ -1,8 +1,8 @@
 [build]
-  publish = "dist"
-  command = "npm run build:web"
+  publish = "web-build"
+  command = "yarn build:web"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200

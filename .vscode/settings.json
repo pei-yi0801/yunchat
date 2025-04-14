@@ -56,5 +56,8 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "npm.enableRunFromFolder": true,
-  "npm.packageManager": "yarn"
+  "npm.packageManager": "yarn",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }
