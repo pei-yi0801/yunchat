@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
 import { useRouter } from 'expo-router';
 import { Lock, UserCheck, Key } from 'lucide-react-native';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { Permission } from '@/types/auth';
 
 interface LoginErrors {
   agentId: string;
@@ -14,7 +15,7 @@ interface LoginErrors {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, agent } = useAuth();
 
   const [agentId, setAgentId] = useState('');
   const [agentName, setAgentName] = useState('');
@@ -72,7 +73,12 @@ export default function LoginScreen() {
       if (success) {
         // 使用try-catch包装路由导航，防止路由错误
         try {
-          router.replace('/(drawer)');
+          // 根据权限自动跳转
+          if (agent?.permissions?.includes(Permission.MANAGE_AGENTS) || agent?.permissions?.includes(Permission.MANAGE_SYSTEM)) {
+            router.replace('/admin');
+          } else {
+            router.replace('/(drawer)');
+          }
         } catch (navError) {
           console.error('导航到主屏幕时出错:', navError);
           // 如果导航失败，尝试其他备选路由
@@ -299,4 +305,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     textAlign: 'center',
   },
-}); 
+});
